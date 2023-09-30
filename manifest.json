@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "GitHub Gifs",
+  "name": "GitHub GIFs",
   "version": "1.0",
   "description": "Search and add GIFs to GitHub comments",
   "permissions": ["activeTab", "storage"],
