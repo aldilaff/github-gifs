@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Gif Adder",
+  "version": "1.0",
+  "description": "Search and add GIFs to GitHub comments",
+  "permissions": ["activeTab", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "styles.css", "popup.js", "gif-icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "host_permissions": ["https://github-gifs.aldilaff6545.workers.dev/*"]
+}
