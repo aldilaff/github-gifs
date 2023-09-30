@@ -12,7 +12,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup.html", "styles.css", "popup.js", "gif-icon.png"],
+      "resources": ["popup.html", "styles.css", "gif-icon.png"],
       "matches": ["<all_urls>"]
     }
   ],
