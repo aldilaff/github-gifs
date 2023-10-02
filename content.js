@@ -1,86 +1,81 @@
-async function showPopup(nearElement) {
-  const response = await fetch(chrome.runtime.getURL("popup.html"));
-  const text = await response.text();
+async function fetchHTML(url) {
+  const response = await fetch(url);
+  return await response.text();
+}
 
+async function fetchJSON(url) {
+  const response = await fetch(url);
+  return await response.json();
+}
+
+async function showPopup(nearElement) {
+  const popupHTML = await fetchHTML(chrome.runtime.getURL("popup.html"));
   const popup = document.createElement("div");
   popup.className = "gif-popup";
-  popup.innerHTML = text;
+  popup.innerHTML = popupHTML;
+
+  const { bottom, left } = nearElement.getBoundingClientRect();
+  Object.assign(popup.style, {
+    position: "absolute",
+    top: `${bottom + window.scrollY}px`,
+    left: `${left}px`,
+    zIndex: "10000"
+  });
 
   document.body.appendChild(popup);
 
-  const outsideClickListener = function (event) {
+  const removePopup = (event) => {
     if (!popup.contains(event.target) && event.target !== nearElement) {
-      // does not include the button itself
       popup.remove();
-      document.removeEventListener("click", outsideClickListener); // Important: remove the listener to prevent multiple instances
+      document.removeEventListener("click", removePopup);
     }
   };
 
-  document.removeEventListener("click", outsideClickListener); // Important: remove the listener to prevent multiple instances
+  document.addEventListener("click", removePopup, true);
 
-  // Event listener to check for clicks outside the popup
-  document.addEventListener("click", outsideClickListener, true);
+  setupSearchHandlers(popup, nearElement);
+}
 
-  // Get button and popup dimensions
-  const rect = nearElement.getBoundingClientRect();
-
-  // Calculate the popup's top and left position
-  // Positioning popup below the button and centering it horizontally relative to the button
-  const topPosition = rect.bottom + window.scrollY;
-  const leftPosition = rect.left;
-
-  popup.style.position = "absolute";
-  popup.style.top = `${topPosition}px`;
-  popup.style.left = `${leftPosition}px`;
-  popup.style.zIndex = "10000"; // Ensuring popup appears above other elements
-
+function setupSearchHandlers(popup, nearElement) {
   const searchButton = popup.querySelector("#searchButton");
   const searchInput = popup.querySelector("#searchInput");
   const resultsDiv = popup.querySelector("#results");
 
   searchButton.addEventListener("click", async () => {
     const query = searchInput.value;
+    const url = `https://github-gifs.aldilaff6545.workers.dev?q=${query}`;
+    const { data } = await fetchJSON(url);
 
-    const response = await fetch(
-      `https://github-gifs.aldilaff6545.workers.dev?q=${query}`
-    );
-
-    const data = await response.json();
-
-    resultsDiv.innerHTML = ""; // clear previous results
-
-    data.data.forEach((gif) => {
-      const img = document.createElement("img");
-      img.src = gif.images.fixed_height.url;
-      img.addEventListener("click", () => {
-        // Copy GIF URL to clipboard, you can enhance this to directly insert into GitHub comment
-        const tabContainer = nearElement.closest("tab-container");
-        const commentBox = tabContainer.querySelector("textarea");
-        commentBox.value += `![gif](` + gif.images.fixed_height.url + `)`;
-        popup.remove();
-      });
-      resultsDiv.appendChild(img);
-    });
+    resultsDiv.innerHTML = "";
+    data.forEach(({ images }) => appendGif(images.fixed_height.url, nearElement, resultsDiv));
   });
+}
+
+function appendGif(src, nearElement, parentDiv) {
+  const img = document.createElement("img");
+  img.src = src;
+  img.addEventListener("click", () => {
+    const commentBox = nearElement.closest("tab-container").querySelector("textarea");
+    commentBox.value += `![gif](${src})`;
+    parentDiv.parentElement.remove();
+  });
+  parentDiv.appendChild(img);
 }
 
 function addGifButton() {
   const commentBoxes = document.querySelectorAll("markdown-toolbar");
   const iconURL = chrome.runtime.getURL("gif-icon.png");
+
   commentBoxes.forEach((box) => {
     if (!box.parentElement.querySelector(".gif-button")) {
       const gifButton = document.createElement("div");
       gifButton.className = "gif-button";
-      const iconImage = document.createElement("img");
-      iconImage.src = iconURL;
-      iconImage.className = "gif-icon";
-      gifButton.appendChild(iconImage);
-      gifButton.addEventListener("click", function (e) {
+      gifButton.innerHTML = `<img src="${iconURL}" class="gif-icon">`;
+      gifButton.addEventListener("click", (e) => {
         e.preventDefault();
-        showPopup(this); // Show popup near the clicked button
+        showPopup(gifButton);
       });
-
-      box.insertBefore(gifButton, box.firstChild);
+      box.prepend(gifButton);
     }
   });
 }
@@ -94,8 +89,8 @@ function addStyles() {
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e1e4e8; 
-    z-index: 10000;  
+    border: 1px solid #e1e4e8;
+    z-index: 10000;
     overflow: auto;
     max-height: 400px;
     max-width: 400px; /* or whatever maximum you desire */
@@ -133,13 +128,11 @@ function addStyles() {
             cursor: pointer;
         }
     `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 }
 
-// Listen for changes in the DOM (e.g., navigating to another issue or PR)
 const observer = new MutationObserver(addGifButton);
 observer.observe(document.body, { childList: true, subtree: true });
 
-// Initial injection
 addGifButton();
 addStyles();
