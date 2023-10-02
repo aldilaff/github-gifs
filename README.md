@@ -3,6 +3,9 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Open Source](https://img.shields.io/badge/open%20source-yes-green)
 
+
+![gif](https://media0.giphy.com/media/XD9o33QG9BoMis7iM4/200.gif?cid=ccfe92c7jv4oj562oe3ieslym9lttqytt39it697r4cu0vng&ep=v1_gifs_search&rid=200.gif&ct=g)
+
 ## 🌟 Description
 
 Introducing GitHub GIFs, a Chrome extension that effortlessly integrates GIFs into your GitHub comments, making your conversations lively, expressive, and fun!
